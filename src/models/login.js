@@ -1,22 +1,54 @@
 import { routerRedux } from 'dva/router';
 import { stringify } from 'querystring';
+import Dexie from 'dexie';
+import uuidv4 from 'uuid/v4';
+import { message, notification } from 'antd';
+import { formatMessage } from 'umi-plugin-react/locale';
 import { fakeAccountLogin, getFakeCaptcha } from '@/services/login';
 import { setAuthority } from '@/utils/authority';
 import { getPageQuery } from '@/utils/utils';
+
+const db = new Dexie('note');
+db.version(1).stores({
+  users: 'userId, userName, password, avatar',
+});
+
 const Model = {
   namespace: 'login',
   state: {
     status: undefined,
+    userId: '',
+    isModalVisible: false,
   },
   effects: {
-    *login({ payload }, { call, put }) {
-      const response = yield call(fakeAccountLogin, payload);
-      yield put({
-        type: 'changeLoginStatus',
-        payload: response,
-      }); // Login successfully
+    *login(
+      {
+        payload: { userName, password },
+      },
+      { call, put },
+    ) {
+      const response = yield db.users.get({
+        userName,
+      });
 
-      if (response.status === 'ok') {
+      if (!response) {
+        const userId = uuidv4();
+        yield db.users.add({ userId, userName, password });
+        message.error('第一次登录');
+        yield put({
+          type: 'saveUserId',
+          payload: userId,
+        });
+        yield put({
+          type: 'changeModalVisible',
+          payload: true,
+        });
+      } else if (response.password === password) {
+        message.success('欢迎回来!');
+        yield put({
+          type: 'saveUserId',
+          payload: response.userId,
+        });
         const urlParams = new URL(window.location.href);
         const params = getPageQuery();
         let { redirect } = params;
@@ -37,6 +69,16 @@ const Model = {
         }
 
         yield put(routerRedux.replace(redirect || '/'));
+      } else {
+        yield put({
+          type: 'changeLoginStatus',
+          payload: 'error',
+        });
+        message.error(
+          formatMessage({
+            id: 'user-login.login.message-invalid-credentials',
+          }),
+        );
       }
     },
 
@@ -61,8 +103,16 @@ const Model = {
   },
   reducers: {
     changeLoginStatus(state, { payload }) {
-      setAuthority(payload.currentAuthority);
-      return { ...state, status: payload.status, type: payload.type };
+      return { ...state, status: payload.status };
+    },
+
+    changeModalVisible(state, { payload }) {
+      return { ...state, isModalVisible: payload };
+    },
+
+    saveUserId(state, { payload }) {
+      window.localStorage.setItem('userId', payload);
+      return { ...state, userId: payload };
     },
   },
 };

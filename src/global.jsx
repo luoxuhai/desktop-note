@@ -1,9 +1,13 @@
 import { Button, message, notification } from 'antd';
 import React from 'react';
 import { formatMessage } from 'umi-plugin-react/locale';
+import router from 'umi/router';
 import defaultSettings from '../config/defaultSettings';
 
 const { pwa } = defaultSettings; // if pwa is true
+
+if (window.localStorage.getItem('userId')) router.replace('/');
+else router.replace('/user/login');
 
 if (pwa) {
   // Notify user if offline now

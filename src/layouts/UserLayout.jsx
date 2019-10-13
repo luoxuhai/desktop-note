@@ -1,7 +1,8 @@
-import { DefaultFooter, getMenuData, getPageTitle } from '@ant-design/pro-layout';
+import { getMenuData, getPageTitle } from '@ant-design/pro-layout';
 import DocumentTitle from 'react-document-title';
 import Link from 'umi/link';
 import React from 'react';
+import { Layout, Button } from 'antd';
 import { connect } from 'dva';
 import { formatMessage } from 'umi-plugin-react/locale';
 import SelectLang from '@/components/SelectLang';
@@ -40,14 +41,19 @@ const UserLayout = props => {
             <div className={styles.header}>
               <Link to="/">
                 <img alt="logo" className={styles.logo} src={logo} />
-                <span className={styles.title}>Ant Design</span>
+                <span className={styles.title}>安全笔记</span>
               </Link>
             </div>
-            <div className={styles.desc}>Ant Design 是西湖区最具影响力的 Web 设计规范</div>
+            <div className={styles.desc}>Windos上最安全的笔记应用</div>
           </div>
           {children}
         </div>
-        <DefaultFooter />
+        <Layout.Footer style={{ position: 'fixed', bottom: 0, width: '100vw', height: 100, textAlign: 'center' }}>
+          安全笔记 ©2019 Created by
+          <Button type="link" target="_blank" href="https://github.com/ibyli">
+            ibyli
+          </Button>
+        </Layout.Footer>
       </div>
     </DocumentTitle>
   );

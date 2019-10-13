@@ -1,27 +1,31 @@
-import { Alert, Checkbox, Icon } from 'antd';
+import { Alert, Checkbox, Icon, Modal } from 'antd';
 import { FormattedMessage, formatMessage } from 'umi-plugin-react/locale';
 import React, { Component } from 'react';
 import Link from 'umi/link';
 import { connect } from 'dva';
 import LoginComponents from './components/Login';
+import FaceRecognition from './components/FaceRecognition';
 import styles from './style.less';
+
 const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginComponents;
 
 @connect(({ login, loading }) => ({
-  userLogin: login,
-  submitting: loading.effects['login/login'],
+  ...login,
 }))
 class Login extends Component {
   loginForm = undefined;
+
   state = {
     type: 'account',
     autoLogin: true,
   };
+
   changeAutoLogin = e => {
     this.setState({
       autoLogin: e.target.checked,
     });
   };
+
   handleSubmit = (err, values) => {
     const { type } = this.state;
 
@@ -33,11 +37,13 @@ class Login extends Component {
       });
     }
   };
+
   onTabChange = type => {
     this.setState({
       type,
     });
   };
+
   onGetCaptcha = () =>
     new Promise((resolve, reject) => {
       if (!this.loginForm) {
@@ -62,6 +68,7 @@ class Login extends Component {
         }
       });
     });
+
   renderMessage = content => (
     <Alert
       style={{
@@ -73,9 +80,24 @@ class Login extends Component {
     />
   );
 
+  handleShowFaceRecoClick = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'login/changeModalVisible',
+      payload: true,
+    });
+  };
+
+  handleHideFaceRecoClick = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'login/changeModalVisible',
+      payload: false,
+    });
+  };
+
   render() {
-    const { userLogin, submitting } = this.props;
-    const { status, type: loginType } = userLogin;
+    const { status, submitting, isModalVisible } = this.props;
     const { type, autoLogin } = this.state;
     return (
       <div className={styles.main}>
@@ -94,8 +116,6 @@ class Login extends Component {
             })}
           >
             {status === 'error' &&
-              loginType === 'account' &&
-              !submitting &&
               this.renderMessage(
                 formatMessage({
                   id: 'user-login.login.message-invalid-credentials',
@@ -105,7 +125,7 @@ class Login extends Component {
               name="userName"
               placeholder={`${formatMessage({
                 id: 'user-login.login.userName',
-              })}: admin or user`}
+              })}`}
               rules={[
                 {
                   required: true,
@@ -119,7 +139,7 @@ class Login extends Component {
               name="password"
               placeholder={`${formatMessage({
                 id: 'user-login.login.password',
-              })}: ant.design`}
+              })}`}
               rules={[
                 {
                   required: true,
@@ -144,7 +164,6 @@ class Login extends Component {
             })}
           >
             {status === 'error' &&
-              loginType === 'mobile' &&
               !submitting &&
               this.renderMessage(
                 formatMessage({
@@ -198,14 +217,15 @@ class Login extends Component {
             <Checkbox checked={autoLogin} onChange={this.changeAutoLogin}>
               <FormattedMessage id="user-login.login.remember-me" />
             </Checkbox>
-            <a
+            <Icon
+              className={styles.face}
               style={{
                 float: 'right',
+                fontSize: 24,
               }}
-              href=""
-            >
-              <FormattedMessage id="user-login.login.forgot-password" />
-            </a>
+              onClick={this.handleShowFaceRecoClick}
+              type="smile"
+            />
           </div>
           <Submit loading={submitting}>
             <FormattedMessage id="user-login.login.login" />
@@ -215,11 +235,20 @@ class Login extends Component {
             <Icon type="alipay-circle" className={styles.icon} theme="outlined" />
             <Icon type="taobao-circle" className={styles.icon} theme="outlined" />
             <Icon type="weibo-circle" className={styles.icon} theme="outlined" />
-            <Link className={styles.register} to="/user/register">
+            <Link className={styles.register} to="/user/login">
               <FormattedMessage id="user-login.login.signup" />
             </Link>
           </div>
         </LoginComponents>
+        <Modal
+          title="Basic Modal"
+          visible={isModalVisible}
+          onOk={this.handleOk}
+          onCancel={this.handleHideFaceRecoClick}
+          destroyOnClose
+        >
+          <FaceRecognition />
+        </Modal>
       </div>
     );
   }
