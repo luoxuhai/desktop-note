@@ -1,0 +1,25 @@
+@import '../../../utils//utils.less';
+.icon {
+  font-size: 16px;
+  .textOverflow;
+}
+
+.listWrapper {
+  height: calc(100vh - 60px);
+  padding-top: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  .listItem {
+    transition: background-color 0.3s;
+    &:hover {
+      background-color: hsla(144, 51.4%, 52.4%, 20%);
+    }
+  }
+}
+
+.title {
+  width: 18em;
+  margin: 0;
+  color: var(--primary-color);
+  .textOverflow;
+}

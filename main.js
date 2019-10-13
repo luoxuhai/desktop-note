@@ -214,7 +214,7 @@ function createWindow() {
   win = new BrowserWindow({
     minWidth: 1000,
     minHeight: 700,
-    webPreferences: { webSecurity: false },
+    webPreferences: { webSecurity: false, nodeIntegration: true },
     backgroundColor: '#ffffff',
   });
   // 然后加载应用的 index.html。

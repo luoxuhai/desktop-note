@@ -3,21 +3,13 @@
 @import '~braft-extensions/dist/color-picker.css';
 @import '~braft-extensions/dist/code-highlighter.css';
 
-.bf-controlbar {
-  position: sticky;
-  z-index: 9999999;
-}
-
-.bf-content {
-  height: 80vh;
-  // margin: 0 100px;
-  overflow: auto;
-}
-
 html,
 body,
 #root {
   height: 100%;
+  user-select: none;
+
+  --primary-color: hsla(144, 51.4%, 52.4%, 100%);
 }
 
 .colorWeak {
