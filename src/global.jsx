@@ -1,9 +1,19 @@
 import { Button, message, notification } from 'antd';
 import React from 'react';
 import { formatMessage } from 'umi-plugin-react/locale';
+import router from 'umi/router';
+import { remote } from 'electron';
 import defaultSettings from '../config/defaultSettings';
 
 const { pwa } = defaultSettings; // if pwa is true
+
+if (window.localStorage.getItem('userId')) router.replace('/');
+else router.replace('/user/login');
+
+if (!navigator.onLine) {
+  remote.dialog.showErrorBox('错误', '本应用必须联网才能使用,请检查网络设置!');
+  remote.app.exit();
+}
 
 if (pwa) {
   // Notify user if offline now
