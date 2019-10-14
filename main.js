@@ -214,8 +214,13 @@ function createWindow() {
   win = new BrowserWindow({
     minWidth: 1000,
     minHeight: 700,
-    webPreferences: { webSecurity: false, nodeIntegration: true },
+    webPreferences: {
+      webSecurity: false,
+      nodeIntegration: true,
+      allowRunningInsecureContent: true,
+    },
     backgroundColor: '#ffffff',
+    icon: './public/favicon.png',
   });
   // 然后加载应用的 index.html。
   // package中的DEV为true时，开启调试窗口。为false时使用编译发布版本

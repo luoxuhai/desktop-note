@@ -1,39 +1,19 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Button, Icon, List, notification } from 'antd';
+import { Icon, List, notification } from 'antd';
+import { connect } from 'dva';
 import { promises as fs } from 'fs';
 import moment from 'moment';
 import { remote } from 'electron';
 import styles from './NoteList.less';
 
-const { Menu, MenuItem } = remote;
-
-const menu = new Menu();
-menu.append(
-  new MenuItem({
-    label: '打开',
-    role: 'selectAll',
-    accelerator: 'CmdOrCtrl+O',
-  }),
-);
-menu.append(
-  new MenuItem({
-    label: '编辑',
-    role: 'selectAll',
-    accelerator: 'CmdOrCtrl+E',
-  }),
-);
-menu.append(
-  new MenuItem({
-    label: '删除',
-    role: 'selectAll',
-    accelerator: 'delete',
-  }),
-);
 moment.locale('zh-cn');
 
-const NoteList = ({ collapsed, onOpenNote }) => {
+export default connect(({ edit }) => ({
+  ...edit,
+}))(({ collapsed, onOpenNote, currentNote, dispatch }) => {
   const [notes, setNotes] = useState([]);
-  let currentNote = ''
+  const [visible, setVisible] = useState(false);
+  const [point, setPoint] = useState({ top: 0, left: 0 });
 
   const getNotes = () => {
     fs.readdir('./resource/notes')
@@ -45,7 +25,11 @@ const NoteList = ({ collapsed, onOpenNote }) => {
             .format('MM月DD日-HH:mm:ss'),
           path: `./resource/notes/${e}`,
         }));
-        onOpenNote(note[0].path)
+        dispatch({
+          type: 'edit/changeCurrentNote',
+          payload: note[0].path,
+        });
+        onOpenNote();
         setNotes(note);
       })
       .catch(err => {
@@ -55,22 +39,12 @@ const NoteList = ({ collapsed, onOpenNote }) => {
         });
       });
 
-    menu.append(
-      new MenuItem({
-        label: '打开',
-        accelerator: 'CmdOrCtrl+O',
-        click: () => {
-          console.log(currentNote);
-          onOpenNote(currentNote);
-        },
-      }),
-    );
-
     document.querySelector('.ant-list').addEventListener(
       'contextmenu',
       e => {
         e.preventDefault();
-        menu.popup({ window: remote.getCurrentWindow() });
+        setPoint({ top: e.pageY + 10, left: e.pageX + 10 });
+        setVisible(true);
       },
       false,
     );
@@ -79,8 +53,20 @@ const NoteList = ({ collapsed, onOpenNote }) => {
   useEffect(getNotes, []);
 
   const handleMouseEnter = path => {
-    currentNote = path;
+    setVisible(false);
+    dispatch({
+      type: 'edit/changeCurrentNote',
+      payload: path,
+    });
   };
+
+  const handleCloseMenu = () => {
+    setVisible(false);
+  };
+
+  const handleDeleteNote = () => {
+
+  }
 
   return (
     <Fragment>
@@ -93,7 +79,7 @@ const NoteList = ({ collapsed, onOpenNote }) => {
             className={styles.listItem}
             key={item.title}
             style={{ padding: collapsed ? 6 : '' }}
-            onClick={() => onOpenNote(notes[index].path)}
+            onClick={onOpenNote}
             onMouseEnter={() => handleMouseEnter(notes[index].path)}
             onFocus={() => null}
           >
@@ -114,8 +100,12 @@ const NoteList = ({ collapsed, onOpenNote }) => {
           </List.Item>
         )}
       />
+      <ul className={styles.contextMenu} style={{ display: visible ? '' : 'none', ...point }}>
+        <li className={styles.menuItem} onClick={onOpenNote}>打开</li>
+        <li className={styles.menuItem} onClick={onOpenNote}>编辑</li>
+        <li className={styles.menuItem} onClick={() => handleDeleteNote()}>删除</li>
+        <li className={styles.mask} onClick={handleCloseMenu} />
+      </ul>
     </Fragment>
   );
-};
-
-export default NoteList;
+});

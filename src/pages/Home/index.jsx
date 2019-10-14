@@ -3,6 +3,7 @@ import BraftEditor from 'braft-editor';
 import ColorPicker from 'braft-extensions/dist/color-picker';
 import CodeHighlighter from 'braft-extensions/dist/code-highlighter';
 import { Row, Col, Button, Layout, List, message, Avatar, Spin, Icon, notification } from 'antd';
+import { connect } from 'dva';
 import uuidv4 from 'uuid/v4';
 import styles from './index.less';
 import NoteList from './components/NoteList';
@@ -81,6 +82,10 @@ BraftEditor.use(
 
 let editorState = {};
 
+@connect(({ edit, login }) => ({
+  ...edit,
+  ...login,
+}))
 class FormDemo extends React.Component {
   state = {
     collapsed: false,
@@ -117,10 +122,16 @@ class FormDemo extends React.Component {
     editorState = out;
   };
 
-  handleSaveByRAW = () => {
+  handleSaveByRAW = async () => {
+    const { userId } = this.props;
+    const path = `./resource/notes/${userId}`;
     // FIXME: 文件保存逻辑
-    const fileName = uuidv4();
-    fs.writeFile(`./resource/notes/${fileName}.raw`, editorState.toRAW())
+
+    await fs.mkdir(path, {
+      recursive: true,
+    });
+
+    fs.writeFile(`${path}/${uuidv4()}.raw`, editorState.toRAW())
       .then(() => {
         message.success('笔记保存成功!');
       })
@@ -149,8 +160,9 @@ class FormDemo extends React.Component {
       });
   };
 
-  handleOpenNote = path => {
-    fs.readFile(path, { encoding: 'utf-8' }).then(res => {
+  handleOpenNote = () => {
+    const { currentNote } = this.props;
+    fs.readFile(currentNote, { encoding: 'utf-8' }).then(res => {
       this.setState({ initEditorData: BraftEditor.createEditorState(res) });
     });
   };
