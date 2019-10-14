@@ -1,6 +1,8 @@
 /* eslint-disable no-buffer-constructor */
 import React, { Component, useEffect, useState } from 'react';
-import { Form, message, Spin } from 'antd';
+import { message, Spin, notification } from 'antd';
+import { connect } from 'dva';
+import router from 'umi/router';
 import fs from 'fs';
 // import { faceClient } from '../../../../../utils/utils';
 import { faceMatch, accessToken } from '../../../../../services/user';
@@ -14,10 +16,15 @@ const stopStream = () => {
   }
 };
 
+const avatarDir = './resource/users/avatars';
+const avatars = fs.readdirSync(avatarDir);
 let intervalId = null;
 
-const FaceRecognition = () => {
+export default connect(({ login }) => ({
+  ...login,
+}))(({ isTranscribe, userId, dispatch }) => {
   const [spinning, setSpinning] = useState(true);
+
   useEffect(() => {
     const init = async () => {
       const video = document.querySelector('#video-face');
@@ -41,34 +48,56 @@ const FaceRecognition = () => {
           },
         },
       };
-
-      const getImage = (w, h) => {
+      // ! 获取图片并对比
+      const getImage = async (w, h) => {
         // accessToken({
         //   grant_type: 'client_credentials',
         //   client_id: 'vBqGDcO9P4q7uQYDYhNBW6MM',
         //   client_secret: '85Ze9UpcbF9hYC6evr8fWo6vg8xqa9GR',
         // });
         ctx.drawImage(video, 0, 0, w, h);
-        faceMatch([
-          {
-            image: canvas.toDataURL('image/jpeg', 0.99).replace('data:image/jpeg;base64,', ''),
-            image_type: 'BASE64',
-            face_type: 'LIVE',
-          },
-          {
-            image: new Buffer(fs.readFileSync('./resource/users/avatar/test.jpg'))
-              .toString('base64')
-              .replace('data:image/jpg;base64,', ''),
-            image_type: 'BASE64',
-            face_type: 'LIVE',
-          },
-        ]).then(res => {
-          if (res.error_msg === 'SUCCESS') {
-            if (res.result.score > 70) {
-              stopStream();
-            }
-          }
-        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.99).replace('data:image/jpeg;base64,', '');
+
+        if (isTranscribe) {
+          fs.writeFile(`${avatarDir}/${userId}.jpg`, new Buffer(imgData, 'base64'), err => {
+            if (err) message.error(err);
+          });
+          notification.close('transcribe');
+          message.success('录入人脸数据成功!', 0.5);
+          clearInterval(intervalId);
+          stopStream();
+          setTimeout(() => router.replace('/'), 500);
+        } else {
+          await Promise.all(
+            avatars.map(async e => {
+              const res = await faceMatch([
+                {
+                  image: imgData,
+                  image_type: 'BASE64',
+                  face_type: 'LIVE',
+                },
+                {
+                  image: new Buffer(fs.readFileSync(`${avatarDir}/${e}`))
+                    .toString('base64')
+                    .replace('data:image/jpg;base64,', ''),
+                  image_type: 'BASE64',
+                  face_type: 'LIVE',
+                },
+              ]);
+
+              if (res.error_msg === 'SUCCESS' && res.result.score > 70) {
+                message.success('人脸识别成功!', 0.5);
+                dispatch({
+                  type: 'login/saveUserId',
+                  payload: e.replace('.jpg', ''),
+                });
+                stopStream();
+                clearInterval(intervalId);
+                setTimeout(() => router.replace('/'), 500);
+              }
+            }),
+          );
+        }
       };
 
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
@@ -100,12 +129,11 @@ const FaceRecognition = () => {
           id="video-face"
           muted
           autoPlay
-          width="600"
+          width="800"
           height="600"
           style={{ width: 300, height: 300, borderRadius: '50%', backgroundColor: '#000' }}
         />
       </Spin>
     </div>
   );
-};
-export default FaceRecognition;
+});

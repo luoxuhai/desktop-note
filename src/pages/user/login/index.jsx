@@ -1,4 +1,4 @@
-import { Alert, Checkbox, Icon, Modal } from 'antd';
+import { Alert, Checkbox, Icon, Modal, Button } from 'antd';
 import { FormattedMessage, formatMessage } from 'umi-plugin-react/locale';
 import React, { Component } from 'react';
 import Link from 'umi/link';
@@ -86,6 +86,10 @@ class Login extends Component {
       type: 'login/changeModalVisible',
       payload: true,
     });
+    dispatch({
+      type: 'login/changeTranscribe',
+      payload: false,
+    });
   };
 
   handleHideFaceRecoClick = () => {
@@ -97,7 +101,7 @@ class Login extends Component {
   };
 
   render() {
-    const { status, submitting, isModalVisible } = this.props;
+    const { status, submitting, isModalVisible, isTranscribe } = this.props;
     const { type, autoLogin } = this.state;
     return (
       <div className={styles.main}>
@@ -241,10 +245,15 @@ class Login extends Component {
           </div>
         </LoginComponents>
         <Modal
-          title="Basic Modal"
+          title={isTranscribe ? '人脸数据录入' : '人脸识别登录'}
           visible={isModalVisible}
-          onOk={this.handleOk}
-          onCancel={this.handleHideFaceRecoClick}
+          maskClosable={false}
+          closable={false}
+          footer={[
+            <Button key="back" type="primary" onClick={this.handleHideFaceRecoClick}>
+              账号密码登录
+            </Button>,
+          ]}
           destroyOnClose
         >
           <FaceRecognition />

@@ -17,8 +17,9 @@ const Model = {
   namespace: 'login',
   state: {
     status: undefined,
-    userId: '',
+    userId: window.localStorage.getItem('userId') || '',
     isModalVisible: false,
+    isTranscribe: false,
   },
   effects: {
     *login(
@@ -34,17 +35,26 @@ const Model = {
       if (!response) {
         const userId = uuidv4();
         yield db.users.add({ userId, userName, password });
-        message.error('第一次登录');
+        notification.warning({
+          message: '温馨提示',
+          description: '第一次登录需录入人脸数据',
+          key: 'transcribe',
+        });
+
         yield put({
           type: 'saveUserId',
           payload: userId,
+        });
+
+        yield put({
+          type: 'changeTranscribe',
+          payload: true,
         });
         yield put({
           type: 'changeModalVisible',
           payload: true,
         });
       } else if (response.password === password) {
-        message.success('欢迎回来!');
         yield put({
           type: 'saveUserId',
           payload: response.userId,
@@ -108,6 +118,10 @@ const Model = {
 
     changeModalVisible(state, { payload }) {
       return { ...state, isModalVisible: payload };
+    },
+
+    changeTranscribe(state, { payload }) {
+      return { ...state, isTranscribe: payload };
     },
 
     saveUserId(state, { payload }) {
