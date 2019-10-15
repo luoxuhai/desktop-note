@@ -1,42 +1,44 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Icon, List, notification } from 'antd';
+import { Icon, List, Modal, Button } from 'antd';
 import { connect } from 'dva';
+import Dexie from 'dexie';
 import { promises as fs } from 'fs';
 import moment from 'moment';
+import 'moment/locale/zh-cn';
 import { remote } from 'electron';
 import styles from './NoteList.less';
 
+const db = new Dexie('note');
+db.version(1).stores({
+  users: 'userId, userName, password, avatar, note',
+});
+
 moment.locale('zh-cn');
 
-export default connect(({ edit }) => ({
+export default connect(({ edit, login }) => ({
   ...edit,
-}))(({ collapsed, onOpenNote, currentNote, dispatch }) => {
-  const [notes, setNotes] = useState([]);
+  ...login,
+}))(({ collapsed, onOpenNote, onDeleteNote, onAddNote, onExportToPdf, notes, dispatch, userId }) => {
+  const [isShareVisible, setIsShareVisible] = useState(false);
   const [visible, setVisible] = useState(false);
   const [point, setPoint] = useState({ top: 0, left: 0 });
+  const share = ['QQ', '微信', '微博', '贴吧'];
 
   const getNotes = () => {
-    fs.readdir('./resource/notes')
-      .then(res => {
-        const note = res.reverse().map(e => ({
-          title: e.slice(13, -5),
-          updatedAt: moment()
-            .utc(e.slice(0, 13), 'YYYYMMDDHHmmss')
-            .format('MM月DD日-HH:mm:ss'),
-          path: `./resource/notes/${e}`,
-        }));
-        dispatch({
-          type: 'edit/changeCurrentNote',
-          payload: note[0].path,
-        });
-        onOpenNote();
-        setNotes(note);
+    db.users
+      .get({
+        userId,
       })
-      .catch(err => {
-        notification.error({
-          message: '读取文件失败!',
-          description: err,
-        });
+      .then(user => {
+        if (user && typeof user.notes === 'object') {
+          dispatch({
+            type: 'edit/changeNotes',
+            payload: {
+              notes: user.notes,
+              userId,
+            },
+          });
+        }
       });
 
     document.querySelector('.ant-list').addEventListener(
@@ -53,34 +55,60 @@ export default connect(({ edit }) => ({
   useEffect(getNotes, []);
 
   const handleMouseEnter = path => {
-    setVisible(false);
     dispatch({
       type: 'edit/changeCurrentNote',
       payload: path,
     });
+    setVisible(false);
   };
 
   const handleCloseMenu = () => {
     setVisible(false);
   };
 
-  const handleDeleteNote = () => {
+  const handleOpenShareModal = () => {
+    setVisible(false);
+    setIsShareVisible(true);
+  };
 
-  }
+  const handleCancel = () => {
+    setIsShareVisible(false);
+  };
+
+  const handleShare = index => {
+    const shares = [
+      'http://wpa.qq.com/msgrd?v=3&uin=2639415619',
+      'https://wx.qq.com/',
+      'https://m.weibo.cn/login?backURL=https%3A%2F%2Fm.weibo.cn%2Fdetail%2F4427447095001282',
+      'https://passport.baidu.com/v2/?reg&tpl=tb&u=https://tieba.baidu.com/index.html?traceid=#',
+    ];
+    setIsShareVisible(false);
+    window.open(shares[index]);
+  };
 
   return (
     <Fragment>
+      <Button
+        style={{ marginTop: 10 }}
+        onClick={onAddNote}
+        type="primary"
+        icon="plus-circle"
+        block
+        size="large"
+      >
+        新建
+      </Button>
       <List
         className={styles.listWrapper}
         dataSource={notes}
         bordered
-        renderItem={(item, index) => (
+        renderItem={item => (
           <List.Item
             className={styles.listItem}
             key={item.title}
             style={{ padding: collapsed ? 6 : '' }}
             onClick={onOpenNote}
-            onMouseEnter={() => handleMouseEnter(notes[index].path)}
+            onMouseEnter={() => handleMouseEnter(item.path)}
             onFocus={() => null}
           >
             <p className={styles.icon}>{collapsed ? item.title : ''}</p>
@@ -101,11 +129,45 @@ export default connect(({ edit }) => ({
         )}
       />
       <ul className={styles.contextMenu} style={{ display: visible ? '' : 'none', ...point }}>
-        <li className={styles.menuItem} onClick={onOpenNote}>打开</li>
-        <li className={styles.menuItem} onClick={onOpenNote}>编辑</li>
-        <li className={styles.menuItem} onClick={() => handleDeleteNote()}>删除</li>
-        <li className={styles.mask} onClick={handleCloseMenu} />
+        <li className={styles.menuItem} onClick={onOpenNote}>
+          打开 Ctrl+O
+        </li>
+        <li className={styles.menuItem} onClick={onOpenNote}>
+          编辑 Ctrl+E
+        </li>
+        <li className={styles.menuItem} onClick={onExportToPdf}>
+          导出为PDF
+        </li>
+        <li className={styles.menuItem} onClick={() => handleOpenShareModal()}>
+          分享 Ctrl+S
+        </li>
+        <li className={styles.menuItem} onClick={onDeleteNote}>
+          删除 Ctrl+D
+        </li>
       </ul>
+      <div
+        className={styles.mask}
+        style={{ display: visible ? '' : 'none' }}
+        onClick={handleCloseMenu}
+      />
+      <Modal
+        title="请选择分享方式"
+        visible={isShareVisible}
+        onOk={handleCancel}
+        onCancel={handleCancel}
+      >
+        {share.map((e, i) => (
+          <Button
+            key={i}
+            onClick={() => handleShare(i)}
+            style={{ margin: '0 20px' }}
+            type="primary"
+            size="large"
+          >
+            {e}
+          </Button>
+        ))}
+      </Modal>
     </Fragment>
   );
 });

@@ -18,6 +18,7 @@ const stopStream = () => {
 
 const avatarDir = './resource/users/avatars';
 const avatars = fs.readdirSync(avatarDir);
+
 let intervalId = null;
 
 export default connect(({ login }) => ({
@@ -64,6 +65,10 @@ export default connect(({ login }) => ({
           });
           notification.close('transcribe');
           message.success('录入人脸数据成功!', 0.5);
+          dispatch({
+            type: 'login/changeModalVisible',
+            payload: false,
+          });
           clearInterval(intervalId);
           stopStream();
           setTimeout(() => router.replace('/'), 500);
@@ -90,6 +95,10 @@ export default connect(({ login }) => ({
                 dispatch({
                   type: 'login/saveUserId',
                   payload: e.replace('.jpg', ''),
+                });
+                dispatch({
+                  type: 'login/changeModalVisible',
+                  payload: false,
                 });
                 stopStream();
                 clearInterval(intervalId);

@@ -5,11 +5,12 @@
 }
 
 .listWrapper {
-  height: calc(100vh - 60px);
+  height: calc(100vh - 110px);
   padding-top: 20px;
   overflow-x: hidden;
   overflow-y: auto;
   .listItem {
+    cursor: pointer;
     transition: background-color 0.2s;
     &:hover {
       background-color: hsla(144, 51.4%, 52.4%, 20%);
@@ -30,8 +31,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 100px;
-  height: 120px;
+  width: 120px;
   margin: 0;
   padding-left: 0;
   background-color: #fff;
@@ -40,21 +40,24 @@
   .menuItem {
     display: flex;
     align-items: center;
-    justify-content: center;
     height: 40px;
+    padding: 0 20px;
+    text-align: justify;
     border-radius: 5px;
+    cursor: pointer;
     transition: background-color 0.2s;
     &:hover {
       background-color: hsla(144, 51.4%, 52.4%, 20%);
     }
   }
-  .mask {
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 999;
-    width: calc(100vw - 350px);
-    height: 100vh;
-    opacity: 0;
-  }
+}
+
+.mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 99;
+  width: calc(100vw - 300px);
+  height: 100vh;
+  opacity: 0;
 }

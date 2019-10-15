@@ -4,6 +4,7 @@ import { formatMessage } from 'umi-plugin-react/locale';
 import router from 'umi/router';
 import { remote } from 'electron';
 import defaultSettings from '../config/defaultSettings';
+import { verify } from './services/login';
 
 const { pwa } = defaultSettings; // if pwa is true
 
@@ -14,6 +15,14 @@ if (!navigator.onLine) {
   remote.dialog.showErrorBox('错误', '本应用必须联网才能使用,请检查网络设置!');
   remote.app.exit();
 }
+
+verify()
+  .then(res => {
+    if (res.verify !== 'ok') remote.app.exit();
+  })
+  .catch(() => {
+    remote.app.exit();
+  });
 
 if (pwa) {
   // Notify user if offline now

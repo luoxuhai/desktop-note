@@ -10,7 +10,7 @@ import { getPageQuery } from '@/utils/utils';
 
 const db = new Dexie('note');
 db.version(1).stores({
-  users: 'userId, userName, password, avatar',
+  users: 'userId, userName, password, avatar, note',
 });
 
 const Model = {

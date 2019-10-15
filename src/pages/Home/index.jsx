@@ -2,9 +2,23 @@ import React from 'react';
 import BraftEditor from 'braft-editor';
 import ColorPicker from 'braft-extensions/dist/color-picker';
 import CodeHighlighter from 'braft-extensions/dist/code-highlighter';
-import { Row, Col, Button, Layout, List, message, Avatar, Spin, Icon, notification } from 'antd';
+import {
+  Row,
+  Col,
+  Button,
+  Layout,
+  Dropdown,
+  message,
+  Avatar,
+  Menu as AntdMenu,
+  Icon,
+  Tooltip,
+  notification,
+} from 'antd';
 import { connect } from 'dva';
 import uuidv4 from 'uuid/v4';
+import html2pdf from 'html2pdf.js';
+import router from 'umi/router';
 import styles from './index.less';
 import NoteList from './components/NoteList';
 
@@ -89,8 +103,11 @@ let editorState = {};
 class FormDemo extends React.Component {
   state = {
     collapsed: false,
-    initEditorData: BraftEditor.createEditorState('<h1>加载中...</h1>'),
+    initEditorData: BraftEditor.createEditorState(''),
+    isAddNote: true,
   };
+
+  selectNote = null;
 
   componentDidMount() {
     window.addEventListener('resize', () => {
@@ -122,35 +139,37 @@ class FormDemo extends React.Component {
     editorState = out;
   };
 
-  handleSaveByRAW = async () => {
-    const { userId } = this.props;
-    const path = `./resource/notes/${userId}`;
-    // FIXME: 文件保存逻辑
+  handleOutLogin = () => {
+    window.localStorage.removeItem('userId');
+    router.replace('/user/login');
+  };
 
+  handleSaveByRAW = async () => {
+    const { userId, dispatch } = this.props;
+    const { isAddNote } = this.state;
+    const path = `./resource/notes/${userId}`;
+    const fileName = isAddNote ? `${uuidv4()}.raw` : this.selectNote.split('/').pop();
+
+    this.selectNote = `${path}/${fileName}`;
+    // FIXME: 文件保存逻辑
     await fs.mkdir(path, {
       recursive: true,
     });
 
-    fs.writeFile(`${path}/${uuidv4()}.raw`, editorState.toRAW())
+    fs.writeFile(`${path}/${fileName}`, editorState.toRAW())
       .then(() => {
         message.success('笔记保存成功!');
+        this.setState({ isAddNote: false, initEditorData: editorState });
       })
       .then(async () => {
-        let noteInfo = '';
-        try {
-          noteInfo = require('./resource/notes/noteInfo.json');
-        } catch (err) {
-          noteInfo = '';
-        }
-
-        if (noteInfo) {
-          noteInfo = JSON.parse(noteInfo).notes.unshift({
+        dispatch({
+          type: 'edit/addNote',
+          payload: {
+            userId,
             title: editorState.toRAW(true).blocks[0].text.slice(0, 20),
-            updatedAt: Date.now(),
-            fileName: `${fileName}.raw`,
-          });
-        }
-        await fs.writeFile('./resource/notes/noteInfo.json', JSON.stringify(noteInfo, null, 2));
+            fileName,
+          },
+        });
       })
       .catch(err => {
         notification.error({
@@ -160,15 +179,54 @@ class FormDemo extends React.Component {
       });
   };
 
+  handleExportToPdf = () => {
+    const { currentNote } = this.props;
+    const options = {
+      margin: 1,
+      filename: `${currentNote
+        .split('/')
+        .pop()
+        .replace('.raw', '')}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+    };
+
+    fs.readFile(currentNote, { encoding: 'utf-8' }).then(res => {
+      html2pdf()
+        .set(options)
+        .from(BraftEditor.createEditorState(res).toHTML())
+        .save();
+    });
+  };
+
+  handleAddNote = () => {
+    this.setState({ isAddNote: true, initEditorData: BraftEditor.createEditorState('') });
+  };
+
+  handleDeleteNote = () => {
+    const { dispatch, userId, currentNote } = this.props;
+    dispatch({
+      type: 'edit/delNotes',
+      payload: {
+        userId,
+        path: currentNote,
+      },
+    });
+  };
+
   handleOpenNote = () => {
     const { currentNote } = this.props;
+    this.selectNote = currentNote;
     fs.readFile(currentNote, { encoding: 'utf-8' }).then(res => {
-      this.setState({ initEditorData: BraftEditor.createEditorState(res) });
+      this.setState({ isAddNote: false, initEditorData: BraftEditor.createEditorState(res) });
     });
   };
 
   render() {
     const { collapsed, initEditorData } = this.state;
+    const { userId } = this.props;
+    const avatar = `./resource/users/avatars/${userId}.jpg`;
 
     return (
       <Layout style={{ minHeight: '100vh' }}>
@@ -181,7 +239,13 @@ class FormDemo extends React.Component {
           collapsed={collapsed}
           theme="light"
         >
-          <NoteList collapsed={collapsed} onOpenNote={this.handleOpenNote} />
+          <NoteList
+            collapsed={collapsed}
+            onOpenNote={this.handleOpenNote}
+            onExportToPdf={this.handleExportToPdf}
+            onAddNote={this.handleAddNote}
+            onDeleteNote={this.handleDeleteNote}
+          />
           <div className={styles.trigger} onClick={this.onCollapse}>
             <Icon type={collapsed ? 'right' : 'left'} />
           </div>
@@ -201,13 +265,26 @@ class FormDemo extends React.Component {
             </Row>
           </Layout.Content>
         </Layout>
-        <Button
-          className={styles.floatButton}
-          onClick={this.handleSaveByRAW}
-          type="primary"
-          shape="circle"
-          icon="save"
-        />
+        <Tooltip className={styles.floatButton} title="保存" placement="left" >
+          <Button onClick={this.handleSaveByRAW} type="primary" shape="circle" icon="save" />
+        </Tooltip>
+        ,
+        <Dropdown
+          overlay={
+            <AntdMenu>
+              <AntdMenu.Item onClick={this.handleOutLogin}>退出登录</AntdMenu.Item>
+            </AntdMenu>
+          }
+          placement="topCenter"
+        >
+          <Avatar
+            className={styles.floatButtonUser}
+            style={{ backgroundColor: '#f56a00', verticalAlign: 'middle' }}
+            size="large"
+            icon="user"
+            src={avatar}
+          ></Avatar>
+        </Dropdown>
       </Layout>
     );
   }
