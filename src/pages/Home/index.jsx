@@ -14,6 +14,8 @@ import {
   Icon,
   Tooltip,
   notification,
+  Modal,
+  Input,
 } from 'antd';
 import { connect } from 'dva';
 import uuidv4 from 'uuid/v4';
@@ -109,6 +111,8 @@ class FormDemo extends React.Component {
 
   selectNote = null;
 
+  recordValue = null;
+
   componentDidMount() {
     window.addEventListener('resize', () => {
       const controlbarH = document.querySelector('.bf-controlbar').clientHeight;
@@ -147,56 +151,80 @@ class FormDemo extends React.Component {
   handleSaveByRAW = async () => {
     const { userId, dispatch } = this.props;
     const { isAddNote } = this.state;
-    const path = `./resource/notes/${userId}`;
-    const fileName = isAddNote ? `${uuidv4()}.raw` : this.selectNote.split('/').pop();
+    // ! 区别新增文件与编辑文件
+    const fileName = isAddNote ? uuidv4() : this.selectNote.split('/').pop();
+    const path = `./resource/notes/${userId}/${fileName}`;
 
-    this.selectNote = `${path}/${fileName}`;
-    // FIXME: 文件保存逻辑
-    await fs.mkdir(path, {
-      recursive: true,
-    });
+    if (!isAddNote) {
+      Modal.warning({
+        title: '提交操作记录',
+        maskClosable: true,
+        content: (
+          <Input.TextArea
+            placeholder="例: 删除第一段"
+            onChange={e => {
+              this.recordValue = e.target.value;
+            }}
+          />
+        ),
+        onOk: async () => {
+          this.selectNote = path;
+          // FIXME: 文件保存逻辑
+          await fs.mkdir(path, {
+            recursive: true,
+          });
 
-    fs.writeFile(`${path}/${fileName}`, editorState.toRAW())
-      .then(() => {
-        message.success('笔记保存成功!');
-        this.setState({ isAddNote: false, initEditorData: editorState });
-      })
-      .then(async () => {
-        dispatch({
-          type: 'edit/addNote',
-          payload: {
-            userId,
-            title: editorState.toRAW(true).blocks[0].text.slice(0, 20),
-            fileName,
-          },
-        });
-      })
-      .catch(err => {
-        notification.error({
-          message: '保存笔记失败!',
-          description: err,
-        });
+          fs.writeFile(
+            `${path}/${Date.now()}.${this.recordValue || 'update'}.raw`,
+            editorState.toRAW(),
+          )
+            .then(() => {
+              message.success('笔记保存成功!');
+              this.recordValue = null;
+              this.setState({ isAddNote: false, initEditorData: editorState });
+            })
+            .then(async () => {
+              dispatch({
+                type: 'edit/addNote',
+                payload: {
+                  userId,
+                  title: editorState.toRAW(true).blocks[0].text.slice(0, 20),
+                  fileName,
+                },
+              });
+            })
+            .catch(err => {
+              notification.error({
+                message: '保存笔记失败!',
+                description: err,
+              });
+            });
+        },
       });
+    }
   };
 
   handleExportToPdf = () => {
     const { currentNote } = this.props;
     const options = {
       margin: 1,
-      filename: `${currentNote
-        .split('/')
-        .pop()
-        .replace('.raw', '')}.pdf`,
+      filename: `${currentNote.split('/').pop()}.pdf`,
       image: { type: 'jpeg', quality: 1 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
     };
+    const hideLoading = message.loading('导出中...', 0);
 
-    fs.readFile(currentNote, { encoding: 'utf-8' }).then(res => {
-      html2pdf()
-        .set(options)
-        .from(BraftEditor.createEditorState(res).toHTML())
-        .save();
+    fs.readdir(currentNote).then(record => {
+      fs.readFile(`${currentNote}/${record.pop()}`, { encoding: 'utf-8' }).then(res => {
+        html2pdf()
+          .set(options)
+          .from(BraftEditor.createEditorState(res).toHTML())
+          .save()
+          .then(() => {
+            hideLoading();
+          });
+      });
     });
   };
 
@@ -215,12 +243,21 @@ class FormDemo extends React.Component {
     });
   };
 
-  handleOpenNote = () => {
+  handleOpenNote = async (path, isRecord = false) => {
     const { currentNote } = this.props;
+
     this.selectNote = currentNote;
-    fs.readFile(currentNote, { encoding: 'utf-8' }).then(res => {
-      this.setState({ isAddNote: false, initEditorData: BraftEditor.createEditorState(res) });
-    });
+    if (isRecord) {
+      fs.readFile(path, { encoding: 'utf-8' }).then(res => {
+        this.setState({ isAddNote: false, initEditorData: BraftEditor.createEditorState(res) });
+      });
+    } else {
+      fs.readdir(path || currentNote).then(record => {
+        fs.readFile(`${currentNote}/${record.pop()}`, { encoding: 'utf-8' }).then(res => {
+          this.setState({ isAddNote: false, initEditorData: BraftEditor.createEditorState(res) });
+        });
+      });
+    }
   };
 
   render() {
@@ -265,10 +302,12 @@ class FormDemo extends React.Component {
             </Row>
           </Layout.Content>
         </Layout>
-        <Tooltip className={styles.floatButton} title="保存" placement="left" >
+        <Tooltip className={styles.floatButtonTemplate} title="模板" placement="left">
+          <Button onClick={this.handleSaveByRAW} style={{ backgroundColor: '#ffbf00', color: 'white' }} shape="circle" icon="pie-chart" />
+        </Tooltip>
+        <Tooltip className={styles.floatButton} title="保存" placement="left">
           <Button onClick={this.handleSaveByRAW} type="primary" shape="circle" icon="save" />
         </Tooltip>
-        ,
         <Dropdown
           overlay={
             <AntdMenu>

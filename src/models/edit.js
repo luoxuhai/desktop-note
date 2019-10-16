@@ -116,7 +116,7 @@ const EditModel = {
       const newNotes = payload.notes.map(({ title, updatedAt, fileName }) => ({
         title,
         updatedAt: moment(updatedAt).format('MM月DD日-HH:mm:ss'),
-        path: `${`./resource/notes/${payload.userId}`}/${fileName}`,
+        path: `./resource/notes/${payload.userId}/${fileName}`,
       }));
       return { ...state, notes: newNotes };
     },
