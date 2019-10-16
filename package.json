@@ -29,7 +29,30 @@
     "test:component": "umi test ./src/components",
     "ui": "umi ui",
     "estart": "electron .",
+    "builder": "electron-builder",
     "package": "electron-packager ./dist 安全笔记 win32 --out=./release-builds --icon=./dist/favicon.png --overwrite"
+  },
+  "build": {
+    "productName": "安全笔记",
+    "appId": "com.note",
+    "copyright": "luoxuhai",
+    "directories": {
+      "output": "releases"
+    },
+    "files": [
+      "./dist/**/*"
+    ],
+    "win": {
+      "icon": "./dist/favicon.png",
+      "target": [
+        {
+         "target": "zip",
+          "arch": [
+            "ia32"
+          ]
+        }
+      ]
+    }
   },
   "husky": {
     "hooks": {
@@ -62,7 +85,6 @@
     "dexie": "^2.0.4",
     "draft-js-prism": "^1.0.6",
     "dva": "^2.4.1",
-    "electron": "^6.0.11",
     "html-table-to-json": "^0.4.0",
     "html2pdf.js": "^0.9.1",
     "lodash": "^4.17.11",
@@ -100,6 +122,8 @@
     "check-prettier": "^1.0.3",
     "cross-env": "^6.0.0",
     "cross-port-killer": "^1.1.1",
+    "electron": "^6.0.11",
+    "electron-builder": "^21.2.0",
     "electron-packager": "^14.0.6",
     "enzyme": "^3.9.0",
     "eslint": "^5.16.0",

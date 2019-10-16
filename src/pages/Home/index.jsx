@@ -224,7 +224,7 @@ class Home extends React.Component {
           <Input.TextArea
             placeholder="例: 删除第一段"
             onChange={e => {
-              this.recordValue = e.target.value.replace(/[\r\n]/g, '');
+              this.recordValue = e.target.value.replace(/[\r\n]/g, '').replace(':', '：');
             }}
           />
         ),
