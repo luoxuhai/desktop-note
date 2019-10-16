@@ -36,7 +36,7 @@ const EditModel = {
         };
 
         const notes =
-         typeof user.notes === 'object'
+          typeof user.notes === 'object'
             ? [addData, ...user.notes.filter(e => e.fileName !== fileName)]
             : [addData];
 
@@ -110,6 +110,10 @@ const EditModel = {
 
     changeCurrentNote(state, { payload }) {
       return { ...state, currentNote: payload };
+    },
+
+    clear(state) {
+      return { ...state, currentNote: '', notes: [] };
     },
 
     changeNotes(state, { payload }) {

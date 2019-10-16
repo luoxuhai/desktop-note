@@ -1,17 +1,9 @@
 import React, { Fragment, useState, useEffect } from 'react';
 import { Icon, message, Timeline } from 'antd';
 import { connect } from 'dva';
-import Dexie from 'dexie';
 import { promises as fs } from 'fs';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
-import { remote } from 'electron';
-import styles from './NoteList.less';
-
-const db = new Dexie('note');
-db.version(1).stores({
-  users: 'userId, userName, password, avatar, note',
-});
 
 moment.locale('zh-cn');
 
@@ -36,8 +28,6 @@ export default connect(({ edit, login }) => ({
 
   useEffect(() => {
     getNotes();
-    // 需要在 componentWillUnmount 执行的内容
-    return function cleanup() {};
   }, []);
 
   const handleOpenNote = fileName => {
@@ -53,7 +43,7 @@ export default connect(({ edit, login }) => ({
           (i === 0 ? (
             <Timeline.Item
               style={{ cursor: 'pointer' }}
-              key={i}
+              key={e.fileName}
               onClick={() => handleOpenNote(e.fileName)}
               color="red"
               dot={i === 0 && <Icon type="clock-circle-o" style={{ fontSize: '16px' }} />}
@@ -64,7 +54,7 @@ export default connect(({ edit, login }) => ({
           ) : (
             <Timeline.Item
               style={{ cursor: 'pointer' }}
-              key={i}
+              key={e.fileName}
               onClick={() => handleOpenNote(e.fileName)}
             >
               {e.updatedAt}

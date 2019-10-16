@@ -28,7 +28,8 @@
     "test:all": "node ./tests/run-tests.js",
     "test:component": "umi test ./src/components",
     "ui": "umi ui",
-    "estart": "electron ."
+    "estart": "electron .",
+    "package": "electron-packager ./dist 安全笔记 win32 --out=./release-builds --icon=./dist/favicon.png --overwrite"
   },
   "husky": {
     "hooks": {

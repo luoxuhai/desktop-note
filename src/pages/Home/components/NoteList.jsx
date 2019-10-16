@@ -1,11 +1,7 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Icon, List, Modal, Button, Timeline } from 'antd';
+import { Icon, List, Modal, Button } from 'antd';
 import { connect } from 'dva';
 import Dexie from 'dexie';
-import { promises as fs } from 'fs';
-import moment from 'moment';
-import 'moment/locale/zh-cn';
-import { remote } from 'electron';
 import OperateRecord from './OperateRecord';
 import styles from './NoteList.less';
 
@@ -14,13 +10,11 @@ db.version(1).stores({
   users: 'userId, userName, password, avatar, note',
 });
 
-moment.locale('zh-cn');
-
 export default connect(({ edit, login }) => ({
   ...edit,
   ...login,
 }))(
-  ({ collapsed, onOpenNote, onDeleteNote, onAddNote, onExportToPdf, notes, dispatch, userId }) => {
+  ({ collapsed, onOpenNote, onAddNote, onExportToPdf, notes, dispatch, userId }) => {
     const [isShareVisible, setIsShareVisible] = useState(false);
     const [recordVisible, setRecordVisible] = useState(false);
     const [visible, setVisible] = useState(false);
@@ -55,7 +49,9 @@ export default connect(({ edit, login }) => ({
       );
     };
 
-    useEffect(getNotes, []);
+    useEffect(() => {
+      getNotes();
+    }, []);
 
     const handleMouseEnter = path => {
       dispatch({
@@ -138,10 +134,10 @@ export default connect(({ edit, login }) => ({
           )}
         />
         <ul className={styles.contextMenu} style={{ display: visible ? '' : 'none', ...point }}>
-          <li className={styles.menuItem} onClick={onOpenNote}>
+          <li className={styles.menuItem} onClick={() => onOpenNote()}>
             打开 Ctrl+O
           </li>
-          <li className={styles.menuItem} onClick={onOpenNote}>
+          <li className={styles.menuItem} onClick={() => onOpenNote()}>
             编辑 Ctrl+E
           </li>
           <li className={styles.menuItem} onClick={handleOpenTimeline}>
@@ -170,7 +166,7 @@ export default connect(({ edit, login }) => ({
         >
           {share.map((e, i) => (
             <Button
-              key={i}
+              key={e}
               onClick={() => handleShare(i)}
               style={{ margin: '0 20px' }}
               type="primary"
@@ -180,7 +176,14 @@ export default connect(({ edit, login }) => ({
             </Button>
           ))}
         </Modal>
-        <Modal title="操作记录" destroyOnClose visible={recordVisible} onOk={handleCancel} onCancel={handleCancel}>
+        <Modal
+          title="操作记录"
+          width={800}
+          destroyOnClose
+          visible={recordVisible}
+          onOk={handleCancel}
+          onCancel={handleCancel}
+        >
           <OperateRecord onOpenNote={onOpenNote} onCancel={handleCancel} />
         </Modal>
       </Fragment>

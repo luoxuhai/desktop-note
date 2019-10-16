@@ -214,6 +214,7 @@ function createWindow() {
   win = new BrowserWindow({
     minWidth: 1000,
     minHeight: 700,
+    show: false,
     webPreferences: {
       webSecurity: false,
       nodeIntegration: true,
@@ -238,7 +239,9 @@ function createWindow() {
 
   const appMenu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(appMenu);
-
+  win.once('ready-to-show', () => {
+    win.show()
+  })
   // 打开开发者工具。
   // win.webContents.openDevTools();
   // 当 window 被关闭，这个事件会被触发。
@@ -249,6 +252,7 @@ function createWindow() {
     win = null;
   });
 }
+app.setName('安全笔记')
 // Electron 会在初始化后并准备
 // 创建浏览器窗口时，调用这个函数。
 // 部分 API 在 ready 事件触发后才能使用。
