@@ -151,7 +151,7 @@ class Home extends React.Component {
         style: {
           width: 190,
           height: 100,
-          marginLeft: 335 - 85,
+          marginLeft: 335 - 83,
         },
       });
     }, 4500);
@@ -175,14 +175,13 @@ class Home extends React.Component {
           title: '输入内容',
           maskClosable: true,
           width: 600,
-          icon: <Icon type="edit" />,
+          icon: <Icon type="edit" style={{ color: '#47c479' }} />,
           okText: '插入',
           cancelText: '取消',
           content: (
             <Input.TextArea
               cols={5}
               rows={6}
-              placeholder="例: 删除第一段"
               onChange={e => {
                 this.editorValue = e.target.value;
               }}
@@ -191,13 +190,24 @@ class Home extends React.Component {
           onCancel: () => {
             isKeyDown = false;
           },
-          onOk: () => {
-            this.setState({
-              initEditorData: ContentUtils.insertText(initEditorData, this.editorValue),
+          onOk: e => {
+            Modal.confirm({
+              title: '插入后无法修改，请仔细确认!',
+              okText: '确认',
+              okType: 'danger',
+              cancelText: '取消',
+              onOk: () => {
+                this.setState({
+                  initEditorData: ContentUtils.insertText(initEditorData, this.editorValue),
+                });
+                this.editorValue = '';
+                isKeyDown = false;
+                isFocusEdit = true;
+                Modal.destroyAll();
+                message.success('插入成功!');
+              },
             });
-            this.editorValue = '';
-            isKeyDown = false;
-            isFocusEdit = true;
+            return false;
           },
         });
         isKeyDown = true;

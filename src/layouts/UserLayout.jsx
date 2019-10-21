@@ -48,10 +48,12 @@ const UserLayout = props => {
           </div>
           {children}
         </div>
-        <Layout.Footer style={{ position: 'fixed', bottom: 0, width: '100vw', height: 100, textAlign: 'center' }}>
-        ImPro Recorder ©2019 Created by
-          <Button type="link" target="_blank" href="https://github.com/ibyli">
-            ibyli
+        <Layout.Footer
+          style={{ position: 'fixed', bottom: 0, width: '100vw', height: 100, textAlign: 'center' }}
+        >
+          ImPro Recorder ©2019 Created by
+          <Button type="link" target="_blank" href="https://www.baidu.com/">
+            ImPro
           </Button>
         </Layout.Footer>
       </div>

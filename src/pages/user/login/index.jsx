@@ -216,6 +216,7 @@ class Login extends Component {
                 },
               ]}
             />
+            <p style={{ color: '#f00' }} >人脸采集为必选项</p>
           </Tab>
           <div>
             <Checkbox checked={autoLogin} onChange={this.changeAutoLogin}>
