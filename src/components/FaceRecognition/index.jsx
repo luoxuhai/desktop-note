@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable no-buffer-constructor */
 import React, { Component, useEffect, useState } from 'react';
 import { message, Spin, notification } from 'antd';
@@ -5,7 +7,7 @@ import { connect } from 'dva';
 import router from 'umi/router';
 import fs from 'fs';
 // import { faceClient } from '../../../../../utils/utils';
-import { faceMatch, accessToken } from '../../../../../services/user';
+import { faceMatch, accessToken } from '../../services/user';
 import styles from './index.less';
 
 const stopStream = () => {
@@ -15,16 +17,19 @@ const stopStream = () => {
     });
   }
 };
-
 const avatarDir = './resource/users/avatars';
+fs.mkdirSync(avatarDir, {
+  recursive: true,
+});
 const avatars = fs.readdirSync(avatarDir);
 
 let intervalId = null;
 
 export default connect(({ login }) => ({
   ...login,
-}))(({ isTranscribe, userId, dispatch }) => {
+}))(({ isTranscribe, userId, dispatch, isHome = false }) => {
   const [spinning, setSpinning] = useState(true);
+  let errCount = 0;
 
   useEffect(() => {
     const init = async () => {
@@ -69,6 +74,10 @@ export default connect(({ login }) => ({
             type: 'login/changeModalVisible',
             payload: false,
           });
+          dispatch({
+            type: 'login/changeTranscribe',
+            payload: false,
+          });
           clearInterval(intervalId);
           stopStream();
           setTimeout(() => router.replace('/'), 500);
@@ -90,7 +99,7 @@ export default connect(({ login }) => ({
                 },
               ]);
 
-              if (res.error_msg === 'SUCCESS' && res.result.score > 70) {
+              if (res.error_code === 0 && res.result.score > 70 && !isHome) {
                 message.success('人脸识别成功!', 0.5);
                 dispatch({
                   type: 'login/saveUserId',
@@ -103,6 +112,15 @@ export default connect(({ login }) => ({
                 stopStream();
                 clearInterval(intervalId);
                 setTimeout(() => router.replace('/'), 500);
+              }
+
+              if (isHome && res.error_code === 222202) {
+                errCount += 1;
+                if (errCount < 3) return;
+                stopStream();
+                clearInterval(intervalId);
+                message.success('非当前登录用户!', 1000);
+                setTimeout(() => router.replace('/user/login'), 1000);
               }
             }),
           );
@@ -117,7 +135,7 @@ export default connect(({ login }) => ({
         const h = video.height;
         canvas.width = w;
         canvas.height = h;
-        intervalId = setInterval(getImage.bind(null, w, h), 800);
+        intervalId = setInterval(getImage.bind(null, w, h), isHome ? 3000 : 800);
       });
     };
 
@@ -131,7 +149,7 @@ export default connect(({ login }) => ({
   }, []);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} style={{ display: isHome ? 'none' : '' }}>
       <Spin tip="加载中..." spinning={spinning} size="large">
         <canvas id="canvas-face" style={{ display: 'none' }} />
         <video

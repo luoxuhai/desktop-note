@@ -30,7 +30,7 @@
     "ui": "umi ui",
     "estart": "electron .",
     "builder": "electron-builder",
-    "package": "electron-packager ./dist 安全笔记 win32 --out=./release-builds --icon=./dist/favicon.png --overwrite"
+    "package": "electron-packager ./dist ImProRecorder win32 --out=./release-builds --icon=./dist/favicon.png --overwrite"
   },
   "build": {
     "productName": "安全笔记",

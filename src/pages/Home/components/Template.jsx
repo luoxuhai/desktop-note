@@ -4,6 +4,7 @@ import { connect } from 'dva';
 import { promises as fs } from 'fs';
 
 const subject = [
+  '医学类',
   '哲学类',
   '经济学类',
   '法学',
@@ -13,7 +14,6 @@ const subject = [
   '历史学',
   '工学',
   '农学',
-  '医学类',
 ];
 
 const path = './resource/templates';

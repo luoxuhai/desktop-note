@@ -10,7 +10,7 @@ export default {
   menu: {
     locale: true,
   },
-  title: '安全笔记',
+  title: 'ImPro Recorder',
   pwa: false,
   iconfontUrl: '',
 };

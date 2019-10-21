@@ -1,5 +1,6 @@
 import React from 'react';
 import BraftEditor from 'braft-editor';
+import { ContentUtils } from 'braft-utils';
 import ColorPicker from 'braft-extensions/dist/color-picker';
 import CodeHighlighter from 'braft-extensions/dist/code-highlighter';
 import {
@@ -24,6 +25,7 @@ import router from 'umi/router';
 import styles from './index.less';
 import NoteList from './components/NoteList';
 import Template from './components/Template';
+import FaceRecognition from '../../components/FaceRecognition';
 
 const { remote } = require('electron');
 const fs = require('fs').promises;
@@ -98,7 +100,16 @@ BraftEditor.use(
 );
 
 let editorState = {};
+let isKeyDown = false;
+let isFocusEdit = false;
 
+const extendControls = [
+  {
+    key: 'custom-button',
+    type: 'button',
+    text: '批改',
+  },
+];
 @connect(({ edit, login }) => ({
   ...edit,
   ...login,
@@ -113,15 +124,37 @@ class Home extends React.Component {
 
   selectNote = null;
 
+  editorValue = '';
+
   recordValue = null;
 
   componentDidMount() {
+    document.title = 'ImPro Recorder';
     notification.open({
-      message: '欢迎来到安全笔记',
+      message: '欢迎来到 ImPro Recorder',
       description:
-        '本软件采用了多重安全手段，以保障用户数据安全。安全级别高 灾备能力强 双重加密 多项安全认证',
+        '本软件采用了多重安全手段，以保障用户数据安全。安全级别高、灾备能力强、双重加密、多项安全认证，旨在提升科研记录的效率，规范、统一科研记录的格式，限制科研记录的记录时间和修改权限，保证每一次记录的真实可靠，并能实时共享，实现科研记录的智能化和网络化。',
       icon: <Icon type="smile" style={{ color: '#47c479' }} />,
     });
+    setTimeout(() => {
+      notification.open({
+        onClose: null,
+        description: (
+          <div style={{ fontSize: 16 }}>
+            实时人脸识别中
+            <Icon style={{ marginLeft: 5, color: '#47c479' }} spin type="instagram" />
+          </div>
+        ),
+        duration: null,
+        placement: 'topRight',
+        top: 150,
+        style: {
+          width: 190,
+          height: 100,
+          marginLeft: 335 - 85,
+        },
+      });
+    }, 4500);
     window.addEventListener('resize', () => {
       const controlbarH = document.querySelector('.bf-controlbar').clientHeight;
       document.querySelector('.bf-content').style.height = `calc(100vh - ${controlbarH}px)`;
@@ -135,6 +168,42 @@ class Home extends React.Component {
       },
       false,
     );
+    window.onkeydown = () => {
+      const { initEditorData } = this.state;
+      if (!isKeyDown && isFocusEdit) {
+        Modal.confirm({
+          title: '输入内容',
+          maskClosable: true,
+          width: 600,
+          icon: <Icon type="edit" />,
+          okText: '插入',
+          cancelText: '取消',
+          content: (
+            <Input.TextArea
+              cols={5}
+              rows={6}
+              placeholder="例: 删除第一段"
+              onChange={e => {
+                this.editorValue = e.target.value;
+              }}
+            />
+          ),
+          onCancel: () => {
+            isKeyDown = false;
+          },
+          onOk: () => {
+            this.setState({
+              initEditorData: ContentUtils.insertText(initEditorData, this.editorValue),
+            });
+            this.editorValue = '';
+            isKeyDown = false;
+            isFocusEdit = true;
+          },
+        });
+        isKeyDown = true;
+        return false;
+      }
+    };
   }
 
   componentDidUpdate() {
@@ -156,6 +225,17 @@ class Home extends React.Component {
 
   handleChange = out => {
     editorState = out;
+    this.setState({
+      initEditorData: out,
+    });
+  };
+
+  handleBlurEdit = () => {
+    isFocusEdit = false;
+  };
+
+  handleFocusEdit = () => {
+    isFocusEdit = true;
   };
 
   handleShowTemplateModal = () => {
@@ -331,6 +411,9 @@ class Home extends React.Component {
                   id="editor"
                   value={initEditorData}
                   onChange={this.handleChange}
+                  onBlur={this.handleBlurEdit}
+                  onFocus={this.handleFocusEdit}
+                  extendControls={extendControls}
                   placeholder="输入内容"
                 />
               </Col>
@@ -377,6 +460,7 @@ class Home extends React.Component {
             onCancel={this.handleHideTemplateModal}
           />
         </Modal>
+        <FaceRecognition isHome />
       </Layout>
     );
   }

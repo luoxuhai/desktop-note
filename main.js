@@ -30,19 +30,6 @@ const template = [
     label: '编辑(E)',
     submenu: [
       {
-        label: '撤销',
-        accelerator: 'CmdOrCtrl+Z',
-        role: 'undo',
-      },
-      {
-        label: '重做',
-        accelerator: 'Shift+CmdOrCtrl+Z',
-        role: 'redo',
-      },
-      {
-        type: 'separator',
-      },
-      {
         label: '剪切',
         accelerator: 'CmdOrCtrl+X',
         role: 'cut',
@@ -132,25 +119,17 @@ const template = [
         role: 'minimize',
       },
       {
-        label: '刷新当前窗口',
-        role: 'reload',
-      },
-      {
         label: '全屏切换',
         role: 'togglefullscreen',
       },
       {
         type: 'separator',
       },
-      {
-        label: '重新打开窗口',
-        accelerator: 'CmdOrCtrl+Shift+T',
-        key: 'reopenMenuItem',
-        click() {
-          app.emit('activate');
-        },
-      },
     ],
+  },
+  {
+    label: '搜索(S)',
+    accelerator: 'CmdOrCtrl+S',
   },
   {
     label: '帮助(H)',
@@ -161,7 +140,7 @@ const template = [
         click(item, focusedWindow) {
           const options = {
             type: 'info',
-            title: '安全笔记',
+            title: 'ImPro Recorder',
             message: '当前没有可用更新',
           };
           dialog.showMessageBox(focusedWindow, options, () => {});
@@ -188,7 +167,7 @@ const template = [
         click(item, focusedWindow) {
           const options = {
             type: 'info',
-            title: '安全笔记',
+            title: 'ImPro Recorder',
             message: `
             版本: 1.38.1 (user setup)
             提交: b37e54c98e1 a74ba89e03073e5a3761284e3ffbo
@@ -204,13 +183,36 @@ const template = [
       },
     ],
   },
+  {
+    label: '联系我们(A)',
+    key: 'restartToUpdate',
+    click(item, focusedWindow) {
+      const options = {
+        type: 'info',
+        title: '联系我们',
+        message: `
+        联系 人   ： ImPro Recorder
+        联系电话：15628800404
+        联系  QQ ：2420545891
+        联系地址：山东省济南市长清区山东中医药大学
+        `,
+      };
+      dialog.showMessageBox(focusedWindow, options, () => {});
+    },
+  },
 ];
 
 if (pkg.DEV) {
-  template[5].push({
-    label: '隐藏/显示开发者工具',
-    role: 'toggledevtools',
-  });
+  template[5].submenu.push(
+    {
+      label: '隐藏/显示开发者工具',
+      role: 'toggledevtools',
+    },
+    {
+      label: '刷新当前窗口',
+      role: 'reload',
+    },
+  );
 }
 function createWindow() {
   // 创建浏览器窗口。

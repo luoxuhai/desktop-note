@@ -8,9 +8,9 @@ import { verify } from './services/login';
 
 const { pwa } = defaultSettings; // if pwa is true
 
-if (window.localStorage.getItem('userId')) router.replace('/');
-else router.replace('/user/login');
-
+// if (window.localStorage.getItem('userId')) router.replace('/');
+// else router.replace('/user/login');
+router.replace('/user/login');
 if (!navigator.onLine) {
   remote.dialog.showErrorBox('错误', '本应用必须联网才能使用,请检查网络设置!');
   remote.app.exit();

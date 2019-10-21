@@ -19,6 +19,7 @@ export default [
           {
             path: '/',
             redirect: '/home',
+            name: 'home',
           },
           {
             path: '/Home',

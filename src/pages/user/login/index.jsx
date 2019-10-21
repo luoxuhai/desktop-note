@@ -1,10 +1,10 @@
-import { Alert, Checkbox, Icon, Modal, Button } from 'antd';
+import { Alert, Checkbox, Icon, Modal, Button, Tooltip } from 'antd';
 import { FormattedMessage, formatMessage } from 'umi-plugin-react/locale';
 import React, { Component } from 'react';
 import Link from 'umi/link';
 import { connect } from 'dva';
 import LoginComponents from './components/Login';
-import FaceRecognition from './components/FaceRecognition';
+import FaceRecognition from '../../../components/FaceRecognition';
 import styles from './style.less';
 
 const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginComponents;
@@ -221,15 +221,17 @@ class Login extends Component {
             <Checkbox checked={autoLogin} onChange={this.changeAutoLogin}>
               <FormattedMessage id="user-login.login.remember-me" />
             </Checkbox>
-            <Icon
-              className={styles.face}
-              style={{
-                float: 'right',
-                fontSize: 24,
-              }}
-              onClick={this.handleShowFaceRecoClick}
-              type="smile"
-            />
+            <Tooltip title="人脸识别" placement="top">
+              <Icon
+                className={styles.face}
+                style={{
+                  float: 'right',
+                  fontSize: 24,
+                }}
+                onClick={this.handleShowFaceRecoClick}
+                type="smile"
+              />
+            </Tooltip>
           </div>
           <Submit loading={submitting}>
             <FormattedMessage id="user-login.login.login" />
